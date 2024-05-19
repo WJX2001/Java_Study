@@ -1,6 +1,7 @@
 package com.practice.studentsystem;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Scanner;
 
 public class App {
@@ -26,7 +27,68 @@ public class App {
   }
 
   private static void forgetPassword(ArrayList<User> list) {
-    System.out.println("忘记密码");
+    Scanner sc = new Scanner(System.in);
+    System.out.println("请输入用户名");
+    String username = sc.next();
+    boolean flag = contains(list, username);
+
+    if (!flag) {
+      System.out.println("当前用户" + username + "未注册，请先注册");
+      return;
+    }
+
+    // 键盘录入身份证号码和手机号码
+    System.out.println("请输入身份证号码");
+    String personId = sc.next();
+    System.out.println("请输入手机号码");
+    String phoneNumber = sc.next();
+
+    // 比较用户对象中的手机号码和身份证号码是否相同
+    // 需要把用户对象先获取出来
+    int index = findIndex(list, username);
+
+    User user = list.get(index);
+    if (!(user.getPersonId().equalsIgnoreCase(personId) && user.getPhoneNumber().equalsIgnoreCase(phoneNumber))) {
+      System.out.println("身份证号码或者手机号码输入有误，不能修改密码");
+      return;
+    }
+    String password;
+    while (true) {
+      System.out.println("请输入新的密码");
+      // 进行修改
+      password = sc.next();
+      System.out.println("请再次输入新的密码");
+      String passwordAgain = sc.next();
+
+      if (password.equals(passwordAgain)) {
+        System.out.println("两次密码输入一致");
+        break;
+      } else {
+        System.out.println("两次密码输入不一致，需要重新输入");
+
+      }
+    }
+    // 直接修改
+    user.setPassword(password);
+    System.out.println("密码修改成功");
+  }
+
+  private static int findIndex(ArrayList<User> list, String username) {
+    /*
+     * TODO:
+     *   1. 判断当前用户的身份证号码和手机号码是否一致，
+     *   2. 如果一致，则提示输入密码，进行修改，
+     *   3. 如果不一致，则提示：帐号信息不匹配，修改失败
+     * */
+
+    for (int i = 0; i < list.size(); i++) {
+      User user = list.get(i);
+      if (user.getUsername().equals(username)) {
+        return i;
+      }
+
+    }
+    return -1;
   }
 
   private static void register(ArrayList<User> list) {
@@ -115,6 +177,17 @@ public class App {
 
     User u = new User(username, password, personId, phoneNumber);
     list.add(u);
+
+    System.out.println("注册成功");
+
+    // 遍历集合
+    printList(list);
+  }
+
+  private static void printList(ArrayList<User> list) {
+    for (User user : list) {
+      System.out.println(user.getUsername() + ", " + user.getPassword() + ", " + user.getPersonId() + ", " + user.getPhoneNumber());
+    }
   }
 
   private static boolean checkPhoneNum(String phoneNumber) {
@@ -208,8 +281,100 @@ public class App {
   }
 
   private static void login(ArrayList<User> list) {
-    System.out.println("登陆");
+    Scanner sc = new Scanner(System.in);
+    for (int i = 0; i < 3; i++) {
+      System.out.println("请输入用户名");
+      String username = sc.next();
+
+      // 判断用户名是否存在
+      boolean flag = contains(list, username);
+      if (!flag) {
+        System.out.println("用户名" + username + "未注册，请先注册再登陆");
+        return;
+      }
+
+      System.out.println("请输入密码");
+      String password = sc.next();
+
+      while (true) {
+        String rightCode = getCode();
+        System.out.println("当前正确的验证码为：" + rightCode);
+        System.out.println("请输入验证码");
+        String code = sc.next();
+        if (code.equalsIgnoreCase(rightCode)) {
+          System.out.println("验证码正确");
+          break;
+        } else {
+          System.out.println("验证码错误");
+        }
+      }
+      User userInfo = new User(username, password, null, null);
+      // 验证 用户名和密码是否正确
+      boolean result = checkUserInfo(userInfo, list);
+
+      if (result) {
+        System.out.println("登陆成功，可以使用学生管理系统了");
+        break;
+      } else {
+        System.out.println("登陆失败，用户名或者密码错误");
+        if (i == 2) {
+          System.out.println("当前帐号" + username + "被锁定");
+          // 直接结束方法
+          return;
+        } else {
+          System.out.println("用户名或者密码错误，还剩下" + (2 - i) + "次机会");
+        }
+      }
+    }
 
   }
 
+  private static boolean checkUserInfo(User userInfo, ArrayList<User> list) {
+    // 遍历集合 判断用户是否存在
+    for (User u : list) {
+      if (u.getUsername().equals(userInfo.getUsername()) && u.getPassword().equals(userInfo.getPassword())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 生成一个验证码
+  private static String getCode() {
+    // 1.创建一个集合添加所有的大写和小写字母
+    ArrayList<Character> list = new ArrayList<>();
+    for (int i = 0; i < 26; i++) {
+      list.add((char) ('a' + i));
+      list.add((char) ('A' + i));
+    }
+
+    StringBuilder sb = new StringBuilder();
+    // 2.随机抽取4个字符
+    Random r = new Random();
+    for (int i = 0; i < 4; i++) {
+      // 获取随机索引
+      int index = r.nextInt(list.size());
+
+      // 利用随机索引获取随机字符
+      char c = list.get(index);
+      sb.append(c);
+    }
+    System.out.println(sb);
+
+    // 3.把一个随机数字添加到末尾
+    int randomNum = r.nextInt(10);
+    sb.append(randomNum);
+
+    // 4.将数字出现在任意位置
+    // 先把字符串变成字符数组 然后变成一个字符串
+
+    char[] arr = sb.toString().toCharArray();
+    // 拿着最后一个索引和随机索引进行交换
+    int randomNumArr = r.nextInt(arr.length);
+    char tmp = arr[arr.length - 1];
+    arr[arr.length - 1] = arr[randomNumArr];
+    arr[randomNumArr] = tmp;
+
+    return new String(arr);
+  }
 }
