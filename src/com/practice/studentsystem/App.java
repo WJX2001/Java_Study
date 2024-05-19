@@ -314,6 +314,9 @@ public class App {
 
       if (result) {
         System.out.println("登陆成功，可以使用学生管理系统了");
+        // 创建对象调用方法，启动学生管理系统
+        StudentSystem stu = new StudentSystem();
+        stu.startStudentSystem();
         break;
       } else {
         System.out.println("登陆失败，用户名或者密码错误");
